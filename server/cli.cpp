@@ -43,9 +43,9 @@ int main()
 	string line;
 	while (getline (cin, line))
 	{
-		send(sock_desc_client, line.c_str(), strlen(line.c_str()), 0);
+		write(sock_desc_client, line.c_str(), strlen(line.c_str()));
 		cout << "Message Sent" << endl;
-		recv(sock_desc_client, buffer, 512, 0);
+		read(sock_desc_client, buffer, 512);
 		cout << buffer << endl;
 	}
 

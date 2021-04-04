@@ -77,7 +77,7 @@ void readGraph(const string& filename, WDigraph& g, unordered_map<int, Point>& p
 }
 
 
-bool readA(int socket)
+int readA(int socket)
 {
 
 	fd_set set;
@@ -89,7 +89,7 @@ bool readA(int socket)
 	if ((tmout = select(socket + 1, &set, NULL, NULL, &timeout)) == 0)
 	{
 		cout << "Time Out!" << endl;
-		return false;
+		return -1;
 	}
 
 	int buffer[512] = {0};
@@ -97,9 +97,9 @@ bool readA(int socket)
 	if (buffer[0] != 'A')
 	{	
 		cout << "Invalid Request" << endl;
-		return false;
+		return 0;
 	}
-	return true;
+	return 1;
 }
 
 
@@ -163,12 +163,15 @@ int main(int argc, char* argv[]) {
 			
 			cout << "Ready to take routing requests" << endl;
 			int read_in = read(conn_socket, buffer, 512);
-			char x;
+			if (read_in == 0) break;
 			string val = "";
 			vector<long long> coords;
 			if (buffer[0] != 'R') 
 			{
-				cerr << "Invalid Request" << endl;
+				// cout << "Invalid Request" << endl;
+				char err[512] = "Invalid Request";
+
+				write(conn_socket, err, 512);
 				continue;
 			}
 			for (int i = 2; i < 512; i++)
@@ -225,18 +228,26 @@ int main(int argc, char* argv[]) {
 
 				bool doublebreak = false;
     			for (int v : path) {
-					if (!(readA(conn_socket))) 
+					int isA = readA(conn_socket);
+					if (isA == 0) 
 					{	
+						char err[512] = "Invalid Request";
+						write(conn_socket, err, 512);
+						doublebreak = true;
+						break;
+					}
+					if (isA = -1)
+					{	
+						char err[512] = "Time Out";
+						write(conn_socket, err, 512);
 						doublebreak = true;
 						break;
 					}
   					// cout << "W " << points[v].lat << ' ' << points[v].lon << endl;
 					string wpoint = "W " + to_string(points[v].lat) + 
 									" " + to_string(points[v].lon);
-					for (int i = 0; i < wpoint.size(); i++)
-						buffer[i] = wpoint[i];
-					buffer[wpoint.size()] = '\0';
-					write(conn_socket, buffer, 512);
+					//char wpoint_c[512] = wpoint.c_str(); 
+					write(conn_socket, wpoint.c_str(), 512);
 				}
 				if (doublebreak) continue;
 				if (!(readA(conn_socket))) continue;
