@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <cstring>
 #include <arpa/inet.h>
+#include <vector>
 // Add more libraries, macros, functions, and global variables if needed
 #define MAX_SIZE 1024
 #define SERVER_PORT 8888
@@ -71,8 +72,9 @@ int main(/*int argc, char const *argv[]*/) {
     // Declare socket descriptor
     int socket_desc;
 
-    char outbound[MAX_SIZE] = {};
-    char inbound[MAX_SIZE] = {};
+    char outbound[MAX_SIZE] = {0};
+    char inbound[MAX_SIZE] = {0};
+    char outbound2[MAX_SIZE] = {0};
 
     socket_desc = socket(AF_INET, SOCK_STREAM, 0);
     if (socket_desc == -1) {
@@ -95,15 +97,72 @@ int main(/*int argc, char const *argv[]*/) {
 
     while (true) {
         int bytesread = read(in, outbound, MAX_SIZE);
+
         if (bytesread == -1)
             cerr << "Error: read operation failed!" << endl;
+
         if (strcmp("Q", outbound) == 0)
             break;
+        cout << outbound << endl;
+        vector<long long> digits;
+        string parsed = "";
+        for (int i = 0; i < strlen(outbound); i++) {
+            if (outbound[i] == '\0') {
+                break;
+            }
+            if (outbound[i] == ' ' || outbound[i] == '\n') {
+                cout << parsed << endl;
+                digits.push_back(static_cast <long long> (stod(parsed) * 100000));
+                parsed = "";
+                continue;
+            }
+            parsed += outbound[i];
+        }
+        cout << parsed << endl;
+        digits.push_back(static_cast <long long> (stod(parsed) * 100000));
+        parsed = "";
 
-        send(socket_desc, outbound, strlen(outbound) + 1, 0);
+       /* int bytesread2 = read(in, outbound2, MAX_SIZE);
+        if (bytesread2 == -1)
+            cerr << "Error: read operation failed!" << endl;
+        
+        cout << outbound2 << endl;
+        for (int i = 0; i < strlen(outbound2); i++) {
+            if (outbound2[i] == '\n') {
+                break;
+            }
+            if (outbound2[i] == ' ') {
+                cout << parsed << endl;
+                digits.push_back(static_cast <long long> (stod(parsed) * 100000));
+                parsed = "";
+                continue;
+            }
+            parsed += outbound2[i];
+        }
+        cout << parsed << endl;
+        digits.push_back(static_cast <long long> (stod(parsed) * 100000));
+        parsed = "";*/
+
+        string str = "R " + to_string(digits[0]) + " " + to_string(digits[1]) +
+                     " " + to_string(digits[2]) + " " + to_string(digits[3]);
+
+        for (int i = 0; i<str.size(); i++) {
+            cout << str[i];
+        }
+
+        send(socket_desc, str.c_str(), str.size(), 0);
+  
+        int rec_size = recv(socket_desc, inbound, MAX_SIZE, 0);
+        cout << "Received: " << inbound << endl;
       
         while (true) {
+            char request[] = {'A'};
+            send(socket_desc, request, strlen(request) + 1, 0);
             int rec_size = recv(socket_desc, inbound, MAX_SIZE, 0);
+            if (inbound[0] != 'W') {
+                cout << "Error: invalid response from the serve" << endl;
+                break;
+            }
             cout << "Received: " << inbound << endl;
             int byteswrite = write(out, inbound, strlen(inbound)+1);
             if (byteswrite == -1)

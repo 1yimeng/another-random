@@ -193,7 +193,7 @@ int main(int argc, char* argv[]) {
 			ePoint.lon = coords[3];
 	
   			// c is guaranteed to be 'R' in part 1, no need to error check until part 2
-	
+			cout << sPoint.lat << " " << sPoint.lon << " " << ePoint.lat << " " << ePoint.lon << endl;
   			// get the points closest to the two points we read
   			int start = findClosest(sPoint, points), end = findClosest(ePoint, points);
 
@@ -201,7 +201,7 @@ int main(int argc, char* argv[]) {
   			// when the end is reached but it is still fast enough
   			unordered_map<int, PIL> tree;
   			dijkstra(graph, start, tree);
-	
+			cout << "hi" << endl;
   			// no path
   			if (tree.find(end) == tree.end()) {
       			cout << "N 0" << endl;
