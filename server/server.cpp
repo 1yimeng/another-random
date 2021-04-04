@@ -166,7 +166,12 @@ int main(int argc, char* argv[]) {
 			char x;
 			string val = "";
 			vector<long long> coords;
-			for (int i = 0; i < 512; i++)
+			if (buffer[0] != 'R') 
+			{
+				cerr << "Invalid Request" << endl;
+				continue;
+			}
+			for (int i = 2; i < 512; i++)
 			{
 				if (buffer[i] == ' ')
 				{
@@ -207,8 +212,17 @@ int main(int argc, char* argv[]) {
     			}
    		 		path.push_front(start);
     			// output the path
-    			cout << "N " << path.size() << endl;
-				
+    			//cout << "N " << path.size() << endl;
+				buffer[0] = 'N';
+				buffer[1] = ' ';
+				buffer[2] = to_string(path.size())[0];
+				buffer[3] = '\0';
+				write(conn_socket, buffer, 512);
+				if (path.size() == 0)
+				{
+					continue;			
+				}
+
 				bool doublebreak = false;
     			for (int v : path) {
 					if (!(readA(conn_socket))) 
@@ -216,11 +230,19 @@ int main(int argc, char* argv[]) {
 						doublebreak = true;
 						break;
 					}
-  					cout << "W " << points[v].lat << ' ' << points[v].lon << endl;
+  					// cout << "W " << points[v].lat << ' ' << points[v].lon << endl;
+					string wpoint = "W " + to_string(points[v].lat) + 
+									" " + to_string(points[v].lon);
+					for (int i = 0; i < wpoint.size(); i++)
+						buffer[i] = wpoint[i];
+					buffer[wpoint.size()] = '\0';
+					write(conn_socket, buffer, 512);
 				}
 				if (doublebreak) continue;
 				if (!(readA(conn_socket))) continue;
-    			cout << "E" << endl;
+				buffer[0] = 'E';
+				buffer[1] = '\0';
+				write(conn_socket, buffer, 512);
 			}
 
 		}

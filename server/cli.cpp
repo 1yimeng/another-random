@@ -38,12 +38,15 @@ int main()
 		cerr << "Connection Failed" << endl;
 		return 0;
 	}
-
+	
+	char buffer[512] = {0};
 	string line;
 	while (getline (cin, line))
 	{
 		send(sock_desc_client, line.c_str(), strlen(line.c_str()), 0);
 		cout << "Message Sent" << endl;
+		recv(sock_desc_client, buffer, 512, 0);
+		cout << buffer << endl;
 	}
 
 	return 0;
