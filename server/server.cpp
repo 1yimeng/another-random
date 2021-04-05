@@ -144,11 +144,7 @@ int main(int argc, char* argv[]) {
 
 	while(true)
 	{
-		char buffer[512];
-		for (int i = 0; i < 512; i++)
-		{
-			buffer[i] = '\0';
-		}
+		char buffer[512] = {0};
 		cout << "Accepting" << endl;
 		int conn_socket;
 		if ((conn_socket = accept(sock_desc, (sockaddr*)&address, (socklen_t*)&addrlen)) < 0)
@@ -193,7 +189,7 @@ int main(int argc, char* argv[]) {
 			ePoint.lon = coords[3];
 	
   			// c is guaranteed to be 'R' in part 1, no need to error check until part 2
-			cout << sPoint.lat << " " << sPoint.lon << " " << ePoint.lat << " " << ePoint.lon << endl;
+//			cout << sPoint.lat << " " << sPoint.lon << " " << ePoint.lat << " " << ePoint.lon << endl;
   			// get the points closest to the two points we read
   			int start = findClosest(sPoint, points), end = findClosest(ePoint, points);
 
@@ -201,7 +197,6 @@ int main(int argc, char* argv[]) {
   			// when the end is reached but it is still fast enough
   			unordered_map<int, PIL> tree;
   			dijkstra(graph, start, tree);
-			cout << "hi" << endl;
   			// no path
   			if (tree.find(end) == tree.end()) {
       			cout << "N 0" << endl;
@@ -216,11 +211,9 @@ int main(int argc, char* argv[]) {
    		 		path.push_front(start);
     			// output the path
     			//cout << "N " << path.size() << endl;
-				buffer[0] = 'N';
-				buffer[1] = ' ';
-				buffer[2] = to_string(path.size())[0];
-				buffer[3] = '\0';
-				write(conn_socket, buffer, 512);
+
+				string n_msg = "N " + to_string(path.size());
+				write(conn_socket, n_msg.c_str(), 512);
 				if (path.size() == 0)
 				{
 					continue;			
@@ -236,7 +229,7 @@ int main(int argc, char* argv[]) {
 						doublebreak = true;
 						break;
 					}
-					if (isA = -1)
+					if (isA == -1)
 					{	
 						char err[512] = "Time Out";
 						write(conn_socket, err, 512);
@@ -250,7 +243,20 @@ int main(int argc, char* argv[]) {
 					write(conn_socket, wpoint.c_str(), 512);
 				}
 				if (doublebreak) continue;
-				if (!(readA(conn_socket))) continue;
+				int last = readA(conn_socket);
+				if (last == 0) 
+				{
+					char err[512] = "Invalid Request";
+					write(conn_socket, err, 512);
+					continue;
+				}
+				if (last == -1)
+				{
+					char err[512] = "Time Out";
+					write(conn_socket, err, 512);
+					continue;
+				}
+
 				buffer[0] = 'E';
 				buffer[1] = '\0';
 				write(conn_socket, buffer, 512);

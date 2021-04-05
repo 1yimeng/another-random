@@ -74,6 +74,7 @@ int main(/*int argc, char const *argv[]*/) {
 
     char outbound[MAX_SIZE] = {0};
     char inbound[MAX_SIZE] = {0};
+	char from_plot[MAX_SIZE] = {0};
     char outbound2[MAX_SIZE] = {0};
 
     socket_desc = socket(AF_INET, SOCK_STREAM, 0);
@@ -96,6 +97,58 @@ int main(/*int argc, char const *argv[]*/) {
     cout << "Connection established with " << inet_ntoa(peer_addr.sin_addr) << ":" << ntohs(peer_addr.sin_port) << "\n";
 
     while (true) {
+		vector<double> coords = {};
+		int read_in;
+		while (coords.size() < 4)
+		{
+			read_in = read(in, outbound, MAX_SIZE);
+			if (read_in == 0)
+			{
+				continue;
+			}
+		
+			cout << outbound << endl;
+			char num_buffer[24] = {0};
+			int k = 0;
+			for (int i = 0; i < MAX_SIZE; i++)
+			{
+				if (outbound[i] == '\n' || outbound[i] == ' ')
+				{
+					num_buffer[k] = '\0';
+					cout << num_buffer << endl;
+					coords.push_back((double)atof(num_buffer));//stod(str));
+					k = 0;
+					continue;
+				}
+				if (outbound[i] == '\0') 
+				{
+					if (k!=0)
+					{
+						cout << num_buffer << endl;
+						num_buffer[k] = '\0';
+						coords.push_back((double)atof(num_buffer));
+						k = 0;
+					}
+					break;
+				}
+				num_buffer[k] = outbound[i];
+				k++;
+			}
+			memset(outbound, 0, MAX_SIZE);
+			memset(num_buffer, 0, 24);
+		}
+
+
+		string params = "R ";
+		params += to_string(static_cast<long long> (coords[0]*100000)) + " ";
+		params += to_string(static_cast<long long> (coords[1]*100000)) + " ";
+		params += to_string(static_cast<long long> (coords[2]*100000)) + " ";
+		params += to_string(static_cast<long long> (coords[3]*100000));
+
+
+
+
+		/*
         int bytesread = read(in, outbound, MAX_SIZE);
 
         if (bytesread == -1)
@@ -106,22 +159,24 @@ int main(/*int argc, char const *argv[]*/) {
         cout << outbound << endl;
         vector<long long> digits;
         string parsed = "";
-        for (int i = 0; i < strlen(outbound); i++) {
+        for (int i = 0; i < MAX_SIZE; i++) {
             if (outbound[i] == '\0') {
                 break;
             }
             if (outbound[i] == ' ' || outbound[i] == '\n') {
                 cout << parsed << endl;
-                digits.push_back(static_cast <long long> (stod(parsed) * 100000));
+                digits.push_back(100000); //static_cast <long long> (stod(parsed) * 100000));
                 parsed = "";
                 continue;
             }
             parsed += outbound[i];
         }
         cout << parsed << endl;
-        digits.push_back(static_cast <long long> (stod(parsed) * 100000));
+        digits.push_back(200000); //static_cast <long long> (stod(parsed) * 100000));
         parsed = "";
-
+		
+		memset(outbound, 0, MAX_SIZE);
+		*/
        /* int bytesread2 = read(in, outbound2, MAX_SIZE);
         if (bytesread2 == -1)
             cerr << "Error: read operation failed!" << endl;
@@ -143,14 +198,9 @@ int main(/*int argc, char const *argv[]*/) {
         digits.push_back(static_cast <long long> (stod(parsed) * 100000));
         parsed = "";*/
 
-        string str = "R " + to_string(digits[0]) + " " + to_string(digits[1]) +
-                     " " + to_string(digits[2]) + " " + to_string(digits[3]);
+        cout << params << endl;
 
-        for (int i = 0; i<str.size(); i++) {
-            cout << str[i];
-        }
-
-        send(socket_desc, str.c_str(), str.size(), 0);
+        send(socket_desc, params.c_str(), params.size(), 0);
   
         int rec_size = recv(socket_desc, inbound, MAX_SIZE, 0);
         cout << "Received: " << inbound << endl;
