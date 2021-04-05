@@ -107,7 +107,7 @@ int main(/*int argc, char const *argv[]*/) {
 				continue;
 			}
 		
-			cout << outbound << endl;
+			//cout << outbound << endl;
 			char num_buffer[24] = {0};
 			int k = 0;
 			for (int i = 0; i < MAX_SIZE; i++)
@@ -115,7 +115,7 @@ int main(/*int argc, char const *argv[]*/) {
 				if (outbound[i] == '\n' || outbound[i] == ' ')
 				{
 					num_buffer[k] = '\0';
-					cout << num_buffer << endl;
+					//cout << num_buffer << endl;
 					coords.push_back((double)atof(num_buffer));//stod(str));
 					k = 0;
 					continue;
@@ -124,7 +124,7 @@ int main(/*int argc, char const *argv[]*/) {
 				{
 					if (k!=0)
 					{
-						cout << num_buffer << endl;
+						//cout << num_buffer << endl;
 						num_buffer[k] = '\0';
 						coords.push_back((double)atof(num_buffer));
 						k = 0;
@@ -145,80 +145,51 @@ int main(/*int argc, char const *argv[]*/) {
 		params += to_string(static_cast<long long> (coords[2]*100000)) + " ";
 		params += to_string(static_cast<long long> (coords[3]*100000));
 
-
-
-
-		/*
-        int bytesread = read(in, outbound, MAX_SIZE);
-
-        if (bytesread == -1)
-            cerr << "Error: read operation failed!" << endl;
-
-        if (strcmp("Q", outbound) == 0)
-            break;
-        cout << outbound << endl;
-        vector<long long> digits;
-        string parsed = "";
-        for (int i = 0; i < MAX_SIZE; i++) {
-            if (outbound[i] == '\0') {
-                break;
-            }
-            if (outbound[i] == ' ' || outbound[i] == '\n') {
-                cout << parsed << endl;
-                digits.push_back(100000); //static_cast <long long> (stod(parsed) * 100000));
-                parsed = "";
-                continue;
-            }
-            parsed += outbound[i];
-        }
-        cout << parsed << endl;
-        digits.push_back(200000); //static_cast <long long> (stod(parsed) * 100000));
-        parsed = "";
-		
-		memset(outbound, 0, MAX_SIZE);
-		*/
-       /* int bytesread2 = read(in, outbound2, MAX_SIZE);
-        if (bytesread2 == -1)
-            cerr << "Error: read operation failed!" << endl;
-        
-        cout << outbound2 << endl;
-        for (int i = 0; i < strlen(outbound2); i++) {
-            if (outbound2[i] == '\n') {
-                break;
-            }
-            if (outbound2[i] == ' ') {
-                cout << parsed << endl;
-                digits.push_back(static_cast <long long> (stod(parsed) * 100000));
-                parsed = "";
-                continue;
-            }
-            parsed += outbound2[i];
-        }
-        cout << parsed << endl;
-        digits.push_back(static_cast <long long> (stod(parsed) * 100000));
-        parsed = "";*/
-
         cout << params << endl;
 
         send(socket_desc, params.c_str(), params.size(), 0);
   
         int rec_size = recv(socket_desc, inbound, MAX_SIZE, 0);
-        cout << "Received: " << inbound << endl;
+        cout << "Received: " << inbound << endl; //number of nodes
       
         while (true) {
             char request[] = {'A'};
             send(socket_desc, request, strlen(request) + 1, 0);
-            int rec_size = recv(socket_desc, inbound, MAX_SIZE, 0);
-            if (inbound[0] != 'W') {
-                cout << "Error: invalid response from the serve" << endl;
+            int rec_size = recv(socket_desc, inbound, MAX_SIZE, 0); //node's coodinates
+            cout << "Received: " << inbound << endl;
+            if (strcmp("E", inbound) == 0) {
+                string end = "E\n";
+                write(out, end.c_str(), 2);
                 break;
             }
-            cout << "Received: " << inbound << endl;
-            int byteswrite = write(out, inbound, strlen(inbound)+1);
+            if (inbound[0] != 'W') {
+                cerr << "Error: invalid response from the serve" << endl;
+                break;
+            }
+
+            string str = "";
+            vector<long long> receivedCoords;
+            for (int i = 2; i < MAX_SIZE; i++) {
+                if (inbound[i] == ' ') {
+                    receivedCoords.push_back(stoll(str));
+                    str = "";
+                    continue;
+                }
+                if (inbound[i] == '\0') {
+                    receivedCoords.push_back(stoll(str));
+                    str = "";
+                    break;
+                } 
+                str += inbound[i]; 
+            }
+            string plotterCoords = "";
+            plotterCoords += (to_string((static_cast<double> (receivedCoords[0]))/100000)) + " ";
+            plotterCoords += (to_string((static_cast<double> (receivedCoords[1]))/100000)) + "\n";
+            cout << plotterCoords; 
+            int byteswrite = write(out, plotterCoords.c_str(), plotterCoords.size());
             if (byteswrite == -1)
                 cerr << "Error: write operation failed!" << endl;
-            if (strcmp("E", inbound) == 0)
-                break;
+            
         }
     }
 
