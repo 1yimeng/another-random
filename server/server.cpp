@@ -81,7 +81,7 @@ int read_cmd(int socket, char letter)
 {
 
 	fd_set set;
-	struct timeval timeout = {10,0};
+	struct timeval timeout = {1,0};
 	int tmout;
 	FD_ZERO(&set); /* clear the set */
   	FD_SET(socket, &set);
@@ -113,7 +113,8 @@ int read_cmd(int socket, char letter)
 int main(int argc, char* argv[]) {
 	WDigraph graph;
   	unordered_map<int, Point> points;
-
+	string port_str = argv[1];
+	int PORT = stoi(port_str);
   // build the graph
 	readGraph("edmonton-roads-2.0.1.txt", graph, points);
 
@@ -129,7 +130,7 @@ int main(int argc, char* argv[]) {
 	int addrlen = sizeof(address);
 	address.sin_family = AF_INET;
 	address.sin_addr.s_addr = inet_addr("127.0.0.1");
-	address.sin_port = htons(8888);
+	address.sin_port = htons(PORT);
 
 	if (bind(sock_desc, (sockaddr*)&address, sizeof(address))<0)
 	{
@@ -176,9 +177,9 @@ int main(int argc, char* argv[]) {
 					continue;
 				}
 				// cout << "Invalid Request" << endl;
-				char err[512] = "Invalid Request";
+				//char err[512] = "Invalid Request";
 
-				write(conn_socket, err, 512);
+				//write(conn_socket, err, 512);
 				continue;
 			}
 			for (int i = 2; i < 512; i++)
@@ -211,6 +212,8 @@ int main(int argc, char* argv[]) {
   			// no path
   			if (tree.find(end) == tree.end()) {
       			cout << "N 0" << endl;
+				string none = "N 0\0";
+				write(conn_socket, none.c_str(), none.size());
   			}
   			else {
     				// read off the path by stepping back through the search tree
@@ -231,15 +234,15 @@ int main(int argc, char* argv[]) {
 					int isA = read_cmd(conn_socket, 'A');
 					if (isA == 0) 
 					{	
-						string err = "Invalid Request";
-						write(conn_socket, err.c_str(), err.size() + 1);
+						//string err = "Invalid Request";
+						//write(conn_socket, err.c_str(), err.size() + 1);
 						doublebreak = true;
 						break;
 					}
 					if (isA == -1)
 					{	
-						string err = "Time Out";
-						write(conn_socket, err.c_str(), err.size() + 1);
+						//string err = "Time Out";
+						//write(conn_socket, err.c_str(), err.size() + 1);
 						doublebreak = true;
 						break;
 					}
@@ -260,14 +263,14 @@ int main(int argc, char* argv[]) {
 				int last = read_cmd(conn_socket, 'A');
 				if (last == 0) 
 				{
-					char err[512] = "Invalid Request";
-					write(conn_socket, err, 512);
+					//char err[512] = "Invalid Request";
+					//write(conn_socket, err, 512);
 					continue;
 				}
 				if (last == -1)
 				{
-					char err[512] = "Time Out";
-					write(conn_socket, err, 512);
+					//char err[512] = "Time Out";
+					//write(conn_socket, err, 512);
 					continue;
 				}
 				if (last == -2)
@@ -277,9 +280,8 @@ int main(int argc, char* argv[]) {
 					break;
 				}
 
-				buffer[0] = 'E';
-				buffer[1] = '\0';
-				write(conn_socket, buffer, 512);
+				string end = "E\0";
+				write(conn_socket, end.c_str(), end.size());
 			}
 
 		}
