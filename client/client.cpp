@@ -8,6 +8,7 @@
 #include <cstring>
 #include <arpa/inet.h>
 #include <vector>
+#include <sys/time.h>
 // Add more libraries, macros, functions, and global variables if needed
 #define MAX_SIZE 1024
 #define SERVER_PORT 8888
@@ -95,7 +96,15 @@ int main(/*int argc, char const *argv[]*/) {
         return 1;
     }
     cout << "Connection established with " << inet_ntoa(peer_addr.sin_addr) << ":" << ntohs(peer_addr.sin_port) << "\n";
-	bool quit = false;
+	
+    struct timeval timer = {.tv_sec = 1};
+    if (setsockopt(socket_desc, SOL_SOCKET, SO_RCVTIMEO, (void *) &timer, sizeof(timer)) == -1) {
+        cerr << "Cannot set socket options!\n";
+        close(socket_desc);
+        return 1;
+    }
+
+    bool quit = false;
 
     while (!quit) {
 		vector<double> coords = {};
@@ -159,14 +168,22 @@ int main(/*int argc, char const *argv[]*/) {
         cout << params << endl;
 
         send(socket_desc, params.c_str(), params.size(), 0);
-  
+    
         int rec_size = recv(socket_desc, inbound, MAX_SIZE, 0);
+        if (rec_size == -1) {
+            cout << "Timeout occurred... still waiting!\n";
+            continue;
+        }
         cout << "Received: " << inbound << endl; //number of nodes
       
         while (true) {
             char request[] = {'A'};
             send(socket_desc, request, strlen(request) + 1, 0);
             int rec_size = recv(socket_desc, inbound, MAX_SIZE, 0); //node's coodinates
+            if (rec_size == -1) {
+                cout << "Timeout occurred... still waiting!\n";
+                break;
+            }  
             cout << "Received: " << inbound << endl;
             if (strcmp("E", inbound) == 0) {
                 string end = "E\n";
