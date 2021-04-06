@@ -77,7 +77,7 @@ void readGraph(const string& filename, WDigraph& g, unordered_map<int, Point>& p
 }
 
 
-int readA(int socket)
+int read_cmd(int socket, char letter)
 {
 
 	fd_set set;
@@ -94,7 +94,11 @@ int readA(int socket)
 
 	int buffer[512] = {0};
 	int read_in = read(socket, buffer, 512);
-	if (buffer[0] != 'A')
+	if (buffer[0] == 'Q')
+	{
+		return -2;
+	}
+	if (buffer[0] != letter)
 	{	
 		cout << "Invalid Request" << endl;
 		return 0;
@@ -141,8 +145,9 @@ int main(int argc, char* argv[]) {
 		return 0;
 	}
 	cout << "Done Listening" << endl;
+	bool quit = false;
 
-	while(true)
+	while(!quit)
 	{
 		char buffer[512] = {0};
 		cout << "Accepting" << endl;
@@ -154,7 +159,7 @@ int main(int argc, char* argv[]) {
 		}
 		cout  << "Done Accepting" << endl;
 
-		while (true) 
+		while (!quit) 
 		{
 			
 			cout << "Ready to take routing requests" << endl;
@@ -164,6 +169,12 @@ int main(int argc, char* argv[]) {
 			vector<long long> coords;
 			if (buffer[0] != 'R') 
 			{
+				if (buffer[0] == 'Q')
+				{
+					quit = true;
+					close(conn_socket);
+					continue;
+				}
 				// cout << "Invalid Request" << endl;
 				char err[512] = "Invalid Request";
 
@@ -214,26 +225,29 @@ int main(int argc, char* argv[]) {
 
 				string n_msg = "N " + to_string(path.size());
 				write(conn_socket, n_msg.c_str(), 512);
-				if (path.size() == 0)
-				{
-					continue;			
-				}
 
 				bool doublebreak = false;
     			for (int v : path) {
-					int isA = readA(conn_socket);
+					int isA = read_cmd(conn_socket, 'A');
 					if (isA == 0) 
 					{	
-						char err[512] = "Invalid Request";
-						write(conn_socket, err, 512);
+						string err = "Invalid Request";
+						write(conn_socket, err.c_str(), err.size() + 1);
 						doublebreak = true;
 						break;
 					}
 					if (isA == -1)
 					{	
-						char err[512] = "Time Out";
-						write(conn_socket, err, 512);
+						string err = "Time Out";
+						write(conn_socket, err.c_str(), err.size() + 1);
 						doublebreak = true;
+						break;
+					}
+					if (isA == -2)
+					{
+						quit = true;
+						doublebreak = true;
+						close(conn_socket);
 						break;
 					}
   					// cout << "W " << points[v].lat << ' ' << points[v].lon << endl;
@@ -243,7 +257,7 @@ int main(int argc, char* argv[]) {
 					write(conn_socket, wpoint.c_str(), 512);
 				}
 				if (doublebreak) continue;
-				int last = readA(conn_socket);
+				int last = read_cmd(conn_socket, 'A');
 				if (last == 0) 
 				{
 					char err[512] = "Invalid Request";
@@ -256,6 +270,12 @@ int main(int argc, char* argv[]) {
 					write(conn_socket, err, 512);
 					continue;
 				}
+				if (last == -2)
+				{
+					quit = true;
+					close(conn_socket);
+					break;
+				}
 
 				buffer[0] = 'E';
 				buffer[1] = '\0';
@@ -264,5 +284,6 @@ int main(int argc, char* argv[]) {
 
 		}
 	}
+	close(sock_desc);
   return 0;
 }

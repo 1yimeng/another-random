@@ -95,8 +95,9 @@ int main(/*int argc, char const *argv[]*/) {
         return 1;
     }
     cout << "Connection established with " << inet_ntoa(peer_addr.sin_addr) << ":" << ntohs(peer_addr.sin_port) << "\n";
+	bool quit = false;
 
-    while (true) {
+    while (!quit) {
 		vector<double> coords = {};
 		int read_in;
 		while (coords.size() < 4)
@@ -106,7 +107,11 @@ int main(/*int argc, char const *argv[]*/) {
 			{
 				continue;
 			}
-		
+			if (outbound[0] == 'Q')
+			{
+				quit = true;
+				break;
+			}
 			//cout << outbound << endl;
 			char num_buffer[24] = {0};
 			int k = 0;
@@ -136,6 +141,12 @@ int main(/*int argc, char const *argv[]*/) {
 			}
 			memset(outbound, 0, MAX_SIZE);
 			memset(num_buffer, 0, 24);
+		}
+		if (quit)
+		{
+			string q_msg = "Q";
+			send(socket_desc, q_msg.c_str(), q_msg.size(), 0);
+			break;
 		}
 
 
