@@ -39,7 +39,7 @@ int create_and_open_fifo(const char * pname, int mode) {
     return fd;
 }
 
-int main(/*int argc, char const *argv[]*/) {
+int main(int argc, char const *argv[]) {
     const char *inpipe = "inpipe";
     const char *outpipe = "outpipe";
 
@@ -49,6 +49,12 @@ int main(/*int argc, char const *argv[]*/) {
     cout << "outpipe opened..." << endl;
 
     char ack[] = "RECEIVED";
+
+	string port_str = argv[1];
+	string ip = argv[2];
+	
+	int PORT = stoi(port_str);
+
     // Your code starts here
 
     // Here is what you need to do:
@@ -86,8 +92,8 @@ int main(/*int argc, char const *argv[]*/) {
 
     // Prepare sockaddr_in structure variable
     peer_addr.sin_family = AF_INET;                         
-    peer_addr.sin_port = htons(SERVER_PORT);                
-    peer_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);    
+    peer_addr.sin_port = htons(PORT);                
+    peer_addr.sin_addr.s_addr = inet_addr(ip.c_str());    
                                                                                            
     // connecting to the server socket
     if (connect(socket_desc, (struct sockaddr *) &peer_addr, sizeof peer_addr) == -1) {
@@ -106,8 +112,8 @@ int main(/*int argc, char const *argv[]*/) {
 
     bool quit = false;
 
+	vector<double> coords = {};
     while (!quit) {
-		vector<double> coords = {};
 		int read_in;
 		while (coords.size() < 4)
 		{
@@ -158,6 +164,7 @@ int main(/*int argc, char const *argv[]*/) {
 			break;
 		}
 
+// put while loop here
 
 		string params = "R ";
 		params += to_string(static_cast<long long> (coords[0]*100000)) + " ";
@@ -186,9 +193,12 @@ int main(/*int argc, char const *argv[]*/) {
 			init_coords += init_coords;
 			init_coords += "E\n";
 			write(out, init_coords.c_str(), init_coords.size());
+			coords = {};
 			continue;
 		}
-
+	
+		bool signal = true;
+		vector<string> send_to_plotter;
         while (true) {
             char request[] = {'A'};
 			string temp_storage;
@@ -197,17 +207,21 @@ int main(/*int argc, char const *argv[]*/) {
 			int rec_size = recv(socket_desc, inbound, MAX_SIZE, 0); //node's coodinates
             if (rec_size == -1) {
                 cout << "Timeout occurred... still waiting!\n";
-                break;
+                signal = false;
+				break;
             }  
             cout << "Received: " << inbound << endl;
             if (strcmp("E", inbound) == 0) {
                 string end = "E\n";
-                write(out, end.c_str(), 2);
+                //write(out, end.c_str(), 2);
+				send_to_plotter.push_back(end);
+				coords = {};
                 break;
             }
             if (inbound[0] != 'W') {
                 cerr << "Error: invalid response from the serve" << endl;
-                break;
+                signal = false;
+				break;
             }
 			
 			// All below are guaranteed to be W cases
@@ -234,11 +248,22 @@ int main(/*int argc, char const *argv[]*/) {
 			{
 				plotterCoords += plotterCoords;
 			}
-            int byteswrite = write(out, plotterCoords.c_str(), plotterCoords.size());
-            if (byteswrite == -1)
-                cerr << "Error: write operation failed!" << endl;
+            //int byteswrite = write(out, plotterCoords.c_str(), plotterCoords.size());
+            send_to_plotter.push_back(plotterCoords);
+			
+			//if (byteswrite == -1)
+             //   cerr << "Error: write operation failed!" << endl;
             
         }
+		if (signal)
+		{
+			for (int i = 0; i < send_to_plotter.size(); i++)
+			{
+				write(out, send_to_plotter[i].c_str(), send_to_plotter[i].size());
+			}
+		}
+
+
     }
 
     // close socket
