@@ -212,8 +212,8 @@ int main(int argc, char* argv[]) {
   			// no path
   			if (tree.find(end) == tree.end()) {
       			cout << "N 0" << endl;
-				string none = "N 0\0";
-				write(conn_socket, none.c_str(), none.size());
+				string none = "N 0";
+				write(conn_socket, none.c_str(), none.size() + 1);
   			}
   			else {
     				// read off the path by stepping back through the search tree
@@ -228,6 +228,7 @@ int main(int argc, char* argv[]) {
 
 				string n_msg = "N " + to_string(path.size());
 				write(conn_socket, n_msg.c_str(), 512);
+				cout << n_msg << endl;
 
 				bool doublebreak = false;
     			for (int v : path) {
@@ -257,6 +258,7 @@ int main(int argc, char* argv[]) {
 					string wpoint = "W " + to_string(points[v].lat) + 
 									" " + to_string(points[v].lon);
 					//char wpoint_c[512] = wpoint.c_str(); 
+					cout << wpoint << endl;
 					write(conn_socket, wpoint.c_str(), 512);
 				}
 				if (doublebreak) continue;
@@ -280,8 +282,9 @@ int main(int argc, char* argv[]) {
 					break;
 				}
 
-				string end = "E\0";
-				write(conn_socket, end.c_str(), end.size());
+				string end = "E";
+				cout << "E" << endl;
+				write(conn_socket, end.c_str(), end.size()+1);
 			}
 
 		}

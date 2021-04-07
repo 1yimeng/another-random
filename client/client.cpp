@@ -175,11 +175,26 @@ int main(/*int argc, char const *argv[]*/) {
             continue;
         }
         cout << "Received: " << inbound << endl; //number of nodes
-      
+      	string val_n_str = (inbound + 2);
+		int val_n = stoi(val_n_str);
+		cout << val_n << endl;
+
+		if (val_n == 0)
+		{
+			string init_coords = to_string(coords[0]) + " "
+							+ to_string(coords[1]) + '\n';
+			init_coords += init_coords;
+			init_coords += "E\n";
+			write(out, init_coords.c_str(), init_coords.size());
+			continue;
+		}
+
         while (true) {
             char request[] = {'A'};
+			string temp_storage;
             send(socket_desc, request, strlen(request) + 1, 0);
-            int rec_size = recv(socket_desc, inbound, MAX_SIZE, 0); //node's coodinates
+            memset(inbound, 0, MAX_SIZE);
+			int rec_size = recv(socket_desc, inbound, MAX_SIZE, 0); //node's coodinates
             if (rec_size == -1) {
                 cout << "Timeout occurred... still waiting!\n";
                 break;
@@ -194,7 +209,8 @@ int main(/*int argc, char const *argv[]*/) {
                 cerr << "Error: invalid response from the serve" << endl;
                 break;
             }
-
+			
+			// All below are guaranteed to be W cases
             string str = "";
             vector<long long> receivedCoords;
             for (int i = 2; i < MAX_SIZE; i++) {
@@ -213,7 +229,11 @@ int main(/*int argc, char const *argv[]*/) {
             string plotterCoords = "";
             plotterCoords += (to_string((static_cast<double> (receivedCoords[0]))/100000)) + " ";
             plotterCoords += (to_string((static_cast<double> (receivedCoords[1]))/100000)) + "\n";
-            cout << plotterCoords; 
+            cout << plotterCoords;
+			if (val_n == 1)
+			{
+				plotterCoords += plotterCoords;
+			}
             int byteswrite = write(out, plotterCoords.c_str(), plotterCoords.size());
             if (byteswrite == -1)
                 cerr << "Error: write operation failed!" << endl;
