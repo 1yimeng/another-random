@@ -176,10 +176,6 @@ int main(int argc, char* argv[]) {
 					close(conn_socket);
 					continue;
 				}
-				// cout << "Invalid Request" << endl;
-				//char err[512] = "Invalid Request";
-
-				//write(conn_socket, err, 512);
 				continue;
 			}
 			for (int i = 2; i < 512; i++)
@@ -233,17 +229,8 @@ int main(int argc, char* argv[]) {
 				bool doublebreak = false;
     			for (int v : path) {
 					int isA = read_cmd(conn_socket, 'A');
-					if (isA == 0) 
+					if (isA == 0 || isA == -1) 
 					{	
-						//string err = "Invalid Request";
-						//write(conn_socket, err.c_str(), err.size() + 1);
-						doublebreak = true;
-						break;
-					}
-					if (isA == -1)
-					{	
-						//string err = "Time Out";
-						//write(conn_socket, err.c_str(), err.size() + 1);
 						doublebreak = true;
 						break;
 					}
@@ -263,18 +250,7 @@ int main(int argc, char* argv[]) {
 				}
 				if (doublebreak) continue;
 				int last = read_cmd(conn_socket, 'A');
-				if (last == 0) 
-				{
-					//char err[512] = "Invalid Request";
-					//write(conn_socket, err, 512);
-					continue;
-				}
-				if (last == -1)
-				{
-					//char err[512] = "Time Out";
-					//write(conn_socket, err, 512);
-					continue;
-				}
+				if (last == 0 || last == -1) continue;
 				if (last == -2)
 				{
 					quit = true;
